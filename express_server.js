@@ -25,6 +25,18 @@ app.get("/hello", (req, res) => {
 
 // Output for curl -i http://localhost:8080/hello
 // <html><body>Hello <b>World</b></body></html>
+
+// app.get("/set", (req, res) => {
+//     const a = 1;
+//     res.send(`a = ${a}`);
+//   });
+  
+//   app.get("/fetch", (req, res) => {
+//     res.send(`a = ${a}`);
+//   });
+// Output
+// for fetch ReferenceError: a is not defined
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
