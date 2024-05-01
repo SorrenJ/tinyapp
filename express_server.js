@@ -23,6 +23,8 @@ app.get("/hello", (req, res) => {
 // Output for http://localhost:8080/hello
 // Hello World
 
+// Output for curl -i http://localhost:8080/hello
+// <html><body>Hello <b>World</b></body></html>
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
