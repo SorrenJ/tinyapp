@@ -28,10 +28,6 @@ const urlDatabase = {
 // Handles POST request. Middleware, parses incoming requests with URL-encoded payloads
 app.use(express.urlencoded({ extended: true }));
 
-app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
-});
 
 
 app.get("/", (req, res) => {
@@ -44,26 +40,34 @@ app.get("/urls.json", (req, res) => {
 // Output for http://localhost:8080/urls.json
 // {"b2xVn2":"http://www.lighthouselabs.ca","9sm5xK":"http://www.google.com"}
 
-app.get("/hello", (req, res) => {
-    res.send("<html><body>Hello <b>World</b></body></html>\n");
-  });
-// Output for http://localhost:8080/hello
-// Hello World
 
-// Output for curl -i http://localhost:8080/hello
-// <html><body>Hello <b>World</b></body></html>
+app.get("/u/:id", (req, res) => {
+  let shortId = req.params.id;
+  const longURL = urlDatabase[shortId];
+  res.redirect(longURL);
+});
 
-// app.get("/set", (req, res) => {
-//     const a = 1;
-//     res.send(`a = ${a}`);
-//   });
-  
-//   app.get("/fetch", (req, res) => {
-//     res.send(`a = ${a}`);
-//   });
-// Output
-// for fetch ReferenceError: a is not defined
 
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+
+
+  let shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL; // assign user-inputted longURL to a generated shortURL
+
+
+  res.redirect(`/urls/${shortURL}`);
+
+
+
+
+
+
+
+
+
+});
 
 
 // render urls_index page
