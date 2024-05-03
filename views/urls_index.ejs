@@ -37,6 +37,11 @@ we'll need to pass it the URL data from express_server.js.
             <tr>
               <td><%= id %></td>
               <td><%= urls[id] %></td>
+              <td>            
+                <form method="POST" action="/urls/<%= id %>/delete">
+                <button type="Submit">Delete</button>
+                </form>
+              </td>
             </tr>
           <% } %>
         </tbody>

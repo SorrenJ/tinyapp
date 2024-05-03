@@ -76,6 +76,17 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// route to delete url
+app.post("/urls/:id/delete", (req, res) => {
+  const id = req.params.id;
+
+  delete urlDatabase[id];
+
+  res.redirect("/urls/");
+});
+
+
+
 // render urls_show page
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
