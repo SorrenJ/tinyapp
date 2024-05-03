@@ -98,6 +98,16 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+// route to update url
+app.post("/urls/:id", (req, res) => {
+  let shortId = req.params.id; // if the info is coming from the URL
+  let longURL = req.body.longURL; // if the info is coming from the input form
+
+  urlDatabase[shortId] = longURL;
+
+  res.redirect("/urls/");
+});
+
 
 
 
