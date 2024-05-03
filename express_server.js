@@ -1,4 +1,5 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -18,15 +19,34 @@ function generateRandomString() {
 // This tells the Express app to use EJS as its templating engine.
 app.set("view engine", "ejs");
 
+
+app.use(cookieParser());
+
+// Handles POST request. Middleware, parses incoming requests with URL-encoded payloads
+app.use(express.urlencoded({ extended: true }));
+
+// User database
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
 
+// Login route
+app.post("/login", (req, res) => {
+  const username = req.body.username; // from the input form
+  res.cookie("username", username);
+  res.redirect("/urls/");
+});
+
+// Logout route
+app.post("/logout", (req, res) => {
+  const username = req.body.username; 
+  res.clearCookie("username", username); // clears the submitted user cookie
+  res.redirect("/urls/");
+});
 
 
-// Handles POST request. Middleware, parses incoming requests with URL-encoded payloads
-app.use(express.urlencoded({ extended: true }));
+
 
 
 
@@ -72,7 +92,10 @@ app.post("/urls", (req, res) => {
 
 // render urls_index page
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"] // displays the username
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -89,7 +112,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 // render urls_show page
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] }; // displays the username
   res.render("urls_show", templateVars);
 });
 
