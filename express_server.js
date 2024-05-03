@@ -41,6 +41,13 @@ app.get("/hello", (req, res) => {
 // Output
 // for fetch ReferenceError: a is not defined
 
+
+
+app.get("/urls", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
