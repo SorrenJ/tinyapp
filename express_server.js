@@ -50,7 +50,7 @@ app.get("/urls", (req, res) => {
 
 // render urls_show page
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: /* What goes here? */ };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
 
