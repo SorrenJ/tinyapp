@@ -108,6 +108,11 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls/");
 });
 
+// route to register
+app.get("/register", (req, res) => {
+  const templateVars = { username: req.cookies["username"] };
+  res.render("register", templateVars);
+});
 
 
 // render urls_show page
