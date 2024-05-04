@@ -45,6 +45,19 @@ const users = {
   },
 };
 
+const findUserByEmail = (email) => {
+  for (const userId in users) {
+    const userFromDb = users[userId];
+
+    if (userFromDb.email === email) {
+      // User is found
+      return userFromDb;
+    }
+  }
+
+  return null;
+};
+
 
 // Login route
 app.post("/login", (req, res) => {
@@ -133,6 +146,25 @@ app.post("/register", (req, res) => {
   let userObj = {};
   let userID = generateRandomString();
 
+  
+  if (req.body.email === "" || req.body.password === "") {
+    
+    // if user has empty email/password
+    return res.status(400).send('cannot have an empty email or password');
+  }
+
+  const user = findUserByEmail(req.body.email);
+
+  // if user already exists
+  if (user) {
+    return res.status(400).send('Email already in use');
+  }
+  
+  
+  
+  
+  
+  
   res.cookie("user_id", userID);
 
   userObj.id = userID;
