@@ -59,12 +59,29 @@ const findUserByEmail = (email) => {
 };
 
 
+
+
+
+
+// GET /login endpoint that responds with this new login form template
+app.get("/login", (req, res) => {
+  const templateVars = {
+    username: users[req.cookies["user_id"]]
+  };
+
+  res.render("login", templateVars);
+});
+
+
 // Login route
 app.post("/login", (req, res) => {
-  const username = req.body.username; // from the input form
-  res.cookie("username", username);
+  const email = req.body.email; // from the input form
+  res.cookie("user_id", findUserByEmail(email));
   res.redirect("/urls/");
 });
+
+
+
 
 // Logout route
 app.post("/logout", (req, res) => {
