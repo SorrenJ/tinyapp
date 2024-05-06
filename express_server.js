@@ -37,8 +37,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // User database
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 
 };
 
@@ -122,15 +128,18 @@ app.get("/urls/new", redirectToLoginIfNotLoggedIn, (req, res) => {
 
 // GET /urls endpoint
 app.get("/urls", (req, res) => {
+    
+  // Checks if for registered user can view URLS
+    if (!req.cookies["user_id"]) {
+      return res.status(401).send('Cannot view "My URLs", you are not logged in');
+    }
+  
   const templateVars = {
     urls: urlsForUser(req.cookies["user_id"]),
     userInfo: users[req.cookies["user_id"]], // displays the username
   };
 
-  // Checks if for registered user can view URLS
-  // if (!req.cookies["user_id"]) {
-  //   return res.status(401).send('Cannot view "My URLs", you are not logged in');
-  // }
+
 
   res.render("urls_index", templateVars);
 });
