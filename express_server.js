@@ -1,5 +1,7 @@
 const express = require("express");
+
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -217,20 +219,23 @@ app.post("/logout", (req, res) => {
   res.redirect("/login");
 });
 
+
 // POST /login endpoint
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-
   const user = findUserByEmail(email);
 
   if (!user) {
     return res.status(403).send('Email cannot be found');
   }
-  // Check if user exists and if the provided password matches
-  if (!user || user.password !== password) {
+
+  // Check if the provided password matches the hashed password
+  // Compare the hashed password with the result of hashing the plaintext password
+  if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send('Incorrect email or password');
   }
+
   // Set the user_id cookie
   res.cookie("user_id", user.id);
 
@@ -240,21 +245,36 @@ app.post("/login", (req, res) => {
 
 // POST /register endpoint
 app.post("/register", (req, res) => {
+  let userObj = {};
+  let userID = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+
   if (!email || !password) {
     return res.status(400).send('Cannot have an empty email or password');
   }
 
   const user = findUserByEmail(email);
-  if (user) {
+  if (user) {    
     return res.status(400).send('Email already in use');
   }
 
-  let userID = generateRandomString();
+
 
   users[userID] = { id: userID, email: email, password: password };
   res.cookie("user_id", userID);
+  userObj.id = userID;
+  userObj.email = req.body.email;
+
+
+
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  userObj.password = hashedPassword;
+  users[userID] = userObj;
+  console.log("users object: ", users);
+
+
+
   res.redirect('/urls');
 });
 
