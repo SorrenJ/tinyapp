@@ -1,6 +1,7 @@
 const express = require("express");
+var cookieSession = require('cookie-session');
 
-const cookieParser = require("cookie-parser");
+//const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -23,42 +24,51 @@ const urlsForUser = function(id) {
 
   for (const shortURL in urlDatabase) {
     if (urlDatabase[shortURL].userID === id) {
-      outputObj[shortURL] = urlDatabase[shortURL];
+      outputObj[shortURL] = {
+        longURL: urlDatabase[shortURL].longURL,
+        userID: id
+      };
     }
   }
-
-  return outputObj;
-};
-
+  
+  return outputObj; // Add this return statement
+}
 // This tells the Express app to use EJS as its templating engine.
 app.set("view engine", "ejs");
 
-app.use(cookieParser());
+//app.use(cookieParser());
+app.use(cookieSession({
+  name: 'tinyapp',
+  keys: ['secret']
+}));
 
 // Handles POST request. Middleware, parses incoming requests with URL-encoded payloads
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware to check if user is logged in and redirect from /register and /login
+// Middleware to check if user is logged in and redirect from /register
 const redirectToUrlsIfLoggedIn = (req, res, next) => {
   const path = req.path;
-  if (req.cookies["user_id"] && (path === "/login")){
+  if (req.session.user_id && path !== "/login" && path !== "/register") {
     return res.redirect("/urls");
   }
   next();
 };
 
-// Middleware to check if user is not logged in and redirect from /urls/new
+// Middleware to check if user is not logged in and redirect to /login
 const redirectToLoginIfNotLoggedIn = (req, res, next) => {
   const path = req.path;
-  if (!req.cookies["user_id"] && path === "/register") {
-    return res.redirect("/register");
+  if (!req.session.user_id && path !== "/login") {
+    return res.redirect("/login");
   }
   next();
 };
 
+
+
+
 // Middleware to check if user is logged in
 const requireLogin = (req, res, next) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.redirect("/login");
   }
   next();
@@ -107,13 +117,13 @@ const findUserByEmail = (email) => {
 
 // GET /register endpoint
 app.get("/register", redirectToUrlsIfLoggedIn, (req, res) => {
-  const templateVars = { userInfo: users[req.cookies["user_id"]] };
+  const templateVars = { userInfo: users[req.session.user_id] };
   res.render("register", templateVars);
 });
 
 // GET /login endpoint
 app.get("/login", redirectToUrlsIfLoggedIn, (req, res) => {
-  const templateVars = { userInfo: users[req.cookies["user_id"]] };
+  const templateVars = { userInfo: users[req.session.user_id] };
   res.render("login", templateVars);
 });
 
@@ -124,7 +134,7 @@ app.get("/login", redirectToUrlsIfLoggedIn, (req, res) => {
 
 app.get("/urls/new", redirectToLoginIfNotLoggedIn, (req, res) => {
   const path = req.path;
-  const templateVars = { userInfo: users[req.cookies["user_id"]] };
+  const templateVars = { userInfo: users[req.session.user_id] };
   res.render("urls_new", templateVars);
 });
 // end of 2
@@ -132,13 +142,13 @@ app.get("/urls/new", redirectToLoginIfNotLoggedIn, (req, res) => {
 // GET /urls endpoint
 app.get("/urls", (req, res) => {
   // Checks if for registered user can view URLS
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.status(401).send('Cannot view "My URLs", you are not logged in');
   }
 
   const templateVars = {
-    urls: urlsForUser(req.cookies["user_id"]),
-    userInfo: users[req.cookies["user_id"]], // displays the username
+    urls: urlsForUser(req.session.user_id),
+    userInfo: users[req.session.user_id], // displays the username
   };
 
   res.render("urls_index", templateVars);
@@ -147,12 +157,12 @@ app.get("/urls", (req, res) => {
 // 3. If someone makes a POST request to /urls and they are not logged in, they should see a relevant error message:
 // POST /urls endpoint
 app.post("/urls", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.status(401).send('You are not logged in');
   }
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies["user_id"] };
-  const templateVars = { userInfo: users[req.cookies["user_id"]] };
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
+  const templateVars = { userInfo: users[req.session.user_id] };
   res.redirect(`/urls/${shortURL}`);
 });
 // end of 3
@@ -173,7 +183,7 @@ app.get("/u/:id", (req, res) => {
 // GET /urls/:id endpoint
 // Ensure the GET /urls/:id page returns a relevant error message to the user if they are not logged in:
 app.get("/urls/:id", requireLogin, (req, res) => {
-  const specificURL = urlsForUser(req.cookies["user_id"]);
+  const specificURL = urlsForUser(req.session.user_id);
 
   if (!specificURL[req.params.id]) {
     return res.status(401).send("Cannot access these URLs!");
@@ -182,7 +192,7 @@ app.get("/urls/:id", requireLogin, (req, res) => {
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id].longURL,
-    userInfo: users[req.cookies["user_id"]],
+    userInfo: users[req.session.user_id],
   };
   res.render("urls_show", templateVars);
 });
@@ -191,20 +201,20 @@ app.get("/urls/:id", requireLogin, (req, res) => {
 app.post("/urls/:id", requireLogin, (req, res) => {
   let shortId = req.params.id;
   let longURL = req.body.longURL;
-  const userId = req.cookies["user_id"]; // Define userId here
+  const userId = req.session.user_id; // Define userId here
   // Check if the URL exists and the user is the owner of the URL
   if (!urlDatabase[shortId] || urlDatabase[shortId].userID !== userId) {
     return res.status(403).send("You do not have permission to edit this URL.");
   }
 
-  urlDatabase[shortId] = { longURL: longURL, userID: req.cookies["user_id"] };
+  urlDatabase[shortId] = { longURL: longURL, userID: req.session.user_id };
   res.redirect("/urls/");
 });
 
 // POST /urls/:id/delete endpoint
 app.post("/urls/:id/delete", requireLogin, (req, res) => {
   const shortId = req.params.id;
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   // Check if the URL exists and the user is the owner of the URL
   if (!urlDatabase[shortId] || urlDatabase[shortId].userID !== userId) {
     return res.status(403).send("You do not have permission to delete this URL.");
@@ -215,7 +225,7 @@ app.post("/urls/:id/delete", requireLogin, (req, res) => {
 
 // POST /logout endpoint
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id"); // clears the submitted user cookie
+  req.session = null; // clears the submitted user cookie
   res.redirect("/login");
 });
 
@@ -231,17 +241,17 @@ app.post("/login", (req, res) => {
   }
 
   // Check if the provided password matches the hashed password
-  // Compare the hashed password with the result of hashing the plaintext password
   if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send('Incorrect email or password');
   }
 
-  // Set the user_id cookie
-  res.cookie("user_id", user.id);
+  // Set the user_id session variable to the user's ID
+  req.session.user_id = user.id;
 
   // Redirect to the /urls page
   res.redirect("/urls");
 });
+
 
 // POST /register endpoint
 app.post("/register", (req, res) => {
@@ -259,21 +269,16 @@ app.post("/register", (req, res) => {
     return res.status(400).send('Email already in use');
   }
 
+  // Correct usage of setting the session variable
+  req.session.user_id = userID;
 
-
-  users[userID] = { id: userID, email: email, password: password };
-  res.cookie("user_id", userID);
   userObj.id = userID;
-  userObj.email = req.body.email;
-
-
+  userObj.email = email;
 
   const hashedPassword = bcrypt.hashSync(password, 10);
   userObj.password = hashedPassword;
   users[userID] = userObj;
   console.log("users object: ", users);
-
-
 
   res.redirect('/urls');
 });
