@@ -15,6 +15,7 @@ function generateRandomString() {
   return strOutput;
 }
 
+// Create a function named urlsForUser(id) which returns the URLs where the userID is equal to the id of the currently logged-in user:
 const urlsForUser = function(id) {
   let outputObj = {};
 
@@ -172,6 +173,7 @@ app.get("/u/:id", (req, res) => {
 // end of 5 and 6
 
 // GET /urls/:id endpoint
+//  Ensure the GET /urls/:id page returns a relevant error message to the user if they are not logged in:
 app.get("/urls/:id", requireLogin, (req, res) => {
   const specificURL = urlsForUser(req.cookies["user_id"]);
 
