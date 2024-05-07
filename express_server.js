@@ -1,6 +1,6 @@
 const express = require("express");
 var cookieSession = require('cookie-session');
-
+const { getUserByEmail } = require("./helpers");
 //const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const app = express();
@@ -91,16 +91,17 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10), // need to hashSync to work for testing
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("dishwasher-funk", 10), // need to hashSync to work for testing
   },
 };
 
-const findUserByEmail = (email) => {
+/*
+const getUserByEmail = (email) => {
   for (const userId in users) {
     const userFromDb = users[userId];
 
@@ -112,7 +113,7 @@ const findUserByEmail = (email) => {
 
   return null;
 };
-
+*/
 // 1. If someone is logged in and visits /register or /login pages, they will be redirected to /urls:
 
 // GET /register endpoint
@@ -234,8 +235,9 @@ app.post("/logout", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = findUserByEmail(email);
-
+  //const user = getUserByEmail(email);
+const userId = getUserByEmail(email, users);
+const user = users[userId];
   if (!user) {
     return res.status(403).send('Email cannot be found');
   }
@@ -264,7 +266,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send('Cannot have an empty email or password');
   }
 
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email);
   if (user) {    
     return res.status(400).send('Email already in use');
   }
