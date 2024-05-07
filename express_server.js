@@ -1,7 +1,6 @@
 const express = require("express");
 var cookieSession = require('cookie-session');
 const { getUserByEmail } = require("./helpers");
-//const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -31,7 +30,7 @@ const urlsForUser = function(id) {
     }
   }
   
-  return outputObj; // Add this return statement
+  return outputObj; 
 }
 // This tells the Express app to use EJS as its templating engine.
 app.set("view engine", "ejs");
@@ -62,9 +61,6 @@ const redirectToLoginIfNotLoggedIn = (req, res, next) => {
   }
   next();
 };
-
-
-
 
 // Middleware to check if user is logged in
 const requireLogin = (req, res, next) => {
@@ -100,22 +96,7 @@ const users = {
   },
 };
 
-/*
-const getUserByEmail = (email) => {
-  for (const userId in users) {
-    const userFromDb = users[userId];
-
-    if (userFromDb.email === email) {
-      // User is found
-      return userFromDb;
-    }
-  }
-
-  return null;
-};
-*/
 // 1. If someone is logged in and visits /register or /login pages, they will be redirected to /urls:
-
 // GET /register endpoint
 app.get("/register", redirectToUrlsIfLoggedIn, (req, res) => {
   const templateVars = { userInfo: users[req.session.user_id] };
@@ -127,7 +108,6 @@ app.get("/login", redirectToUrlsIfLoggedIn, (req, res) => {
   const templateVars = { userInfo: users[req.session.user_id] };
   res.render("login", templateVars);
 });
-
 // end of 1
 
 // 2. If someone is not logged in, redirects to the /login page: 
@@ -229,7 +209,6 @@ app.post("/logout", (req, res) => {
   req.session = null; // clears the submitted user cookie
   res.redirect("/login");
 });
-
 
 // POST /login endpoint
 app.post("/login", (req, res) => {
