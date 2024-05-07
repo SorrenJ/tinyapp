@@ -144,6 +144,7 @@ app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
   const templateVars = { userInfo: users[req.session.user_id] };
+  console.log("URL Database on creation:", urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 // end of 3
@@ -153,12 +154,14 @@ app.post("/urls", (req, res) => {
 // GET /u/:id endpoint
 app.get("/u/:id", (req, res) => {
   let shortId = req.params.id;
-  const longURL = urlDatabase[shortId];
-  if (!longURL) {
+  const urlEntry = urlDatabase[shortId];  // Retrieve the object associated with the shortId
+  if (!urlEntry) {
     return res.status(404).send('Shortened URL does not exist');
   }
-  res.redirect(longURL);
+
+  res.redirect(urlEntry.longURL);  // Redirect to the longURL property of the urlEntry object
 });
+
 // end of 4 and 5
 
 // GET /urls/:id endpoint
