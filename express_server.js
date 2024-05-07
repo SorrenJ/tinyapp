@@ -245,8 +245,9 @@ app.post("/register", (req, res) => {
     return res.status(400).send('Cannot have an empty email or password');
   }
 
-  const user = getUserByEmail(email);
-  if (user) {    
+  // error message when user registers with an existing account
+  const existingUser = getUserByEmail(email, users);
+  if (existingUser) {    
     return res.status(400).send('Email already in use');
   }
 
