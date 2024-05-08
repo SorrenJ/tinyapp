@@ -1,5 +1,5 @@
 const express = require("express");
-var cookieSession = require('cookie-session');
+let cookieSession = require('cookie-session');
 const { getUserByEmail } = require("./helpers");
 const bcrypt = require("bcryptjs");
 const app = express();
@@ -30,8 +30,8 @@ const urlsForUser = function(id) {
     }
   }
   
-  return outputObj; 
-}
+  return outputObj;
+};
 // This tells the Express app to use EJS as its templating engine.
 app.set("view engine", "ejs");
 
@@ -44,19 +44,12 @@ app.use(cookieSession({
 // Handles POST request. Middleware, parses incoming requests with URL-encoded payloads
 app.use(express.urlencoded({ extended: true }));
 
-// Browser Caching: Set HTTP headers to prevent caching of potentially sensitive data
-// app.use((req, res, next) => {
-//   res.set('Cache-Control', 'no-store');
-//   next();
-// });
 
 // Middleware to check if user is logged in and redirect from /register
 const redirectToUrlsIfLoggedIn = (req, res, next) => {
   const path = req.path;
   if (req.session.user_id && path !== "/login" && path !== "/register") {
- 
-   
-   
+    
     return res.redirect("/urls");
   }
   next();
@@ -106,15 +99,6 @@ const users = {
   },
 };
 
-
-
-
-
-
-
-
-
-
 // 1. If someone is logged in and visits /register or /login pages, they will be redirected to /urls:
 // GET /register endpoint
 app.get("/register", redirectToUrlsIfLoggedIn, (req, res) => {
@@ -129,18 +113,14 @@ app.get("/login", redirectToUrlsIfLoggedIn, (req, res) => {
 });
 // end of 1
 
-// 2. If someone is not logged in, redirects to the /login page: 
+// 2. If someone is not logged in, redirects to the /login page:
 // GET /urls/new endpoint
-
 app.get("/urls/new", redirectToLoginIfNotLoggedIn, (req, res) => {
   const path = req.path;
   const templateVars = { userInfo: users[req.session.user_id] };
   res.render("urls_new", templateVars);
 });
 // end of 2
-
-
-
 
 // GET /urls endpoint
 app.get("/urls", (req, res) => {
@@ -175,28 +155,29 @@ app.post("/urls", (req, res) => {
   console.log("URL Database on creation:", urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 
-
-
-
 });
 // end of 3
 
 // 4. If someone makes a request for a url that doesn't exist (no url with provided id in our database), they should see a relevant error message:
-// 5. Every user should be able to visit /u/:id whether they are logged in or not:
 // GET /u/:id endpoint
 app.get("/u/:id", (req, res) => {
   let shortId = req.params.id;
   const urlEntry = urlDatabase[shortId];  // Retrieve the object associated with the shortId
+  
+  // Check if the URL exists in the database
   if (!urlEntry) {
-    return res.status(404).send('Shortened URL does not exist');
+    return res.status(404).send('<html><body><p>This shortened URL does not exist.</p></body></html>');
   }
 
+  // Check if the logged-in user owns the URL
+  if (urlEntry.userID !== req.session.user_id) {
+    return res.status(403).send('<html><body><p>You do not have permission to access this URL.</p></body></html>');
+  }
   console.log("Logged User ID:", req.session.user_id);
   console.log("Requested URL's User ID:", urlEntry.userID);
   res.redirect(urlEntry.longURL);  // Redirect to the longURL property of the urlEntry object
 });
-
-// end of 4 and 5
+// end of 4
 
 // GET /urls/:id endpoint
 // Ensure the GET /urls/:id page returns a relevant error message to the user if they are not logged in:
@@ -227,6 +208,7 @@ app.post("/urls/:id", requireLogin, (req, res) => {
   let shortId = req.params.id;
   let longURL = req.body.longURL;
   const userId = req.session.user_id; // Define userId here
+  
   // Check if the URL exists and the user is the owner of the URL
   if (!urlDatabase[shortId] || urlDatabase[shortId].userID !== userId) {
     return res.status(403).send("You do not have permission to edit this URL.");
@@ -253,9 +235,9 @@ app.post("/urls/:id/delete", requireLogin, (req, res) => {
 // POST /logout endpoint
 app.post("/logout", (req, res) => {
   req.session.user_id = null;
-  req.session = null; // clears the submitted user cookie
+  //req.session = null; // clears the submitted user cookie
  
-  
+  console.log("Session User ID:", req.session.user_id); // Check session ID at critical points
   //console.log("Session User ID:", req.session.user_id); // Check session ID at critical points
   res.redirect("/login");
 });
@@ -265,8 +247,8 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   //const user = getUserByEmail(email);
-const userId = getUserByEmail(email, users);
-const user = users[userId];
+  const userId = getUserByEmail(email, users);
+  const user = users[userId];
   if (!user) {
     return res.status(403).send('Email cannot be found');
   }
@@ -279,11 +261,6 @@ const user = users[userId];
   // Set the user_id session variable to the user's ID
   req.session.user_id = user.id;
 
- 
- 
- 
- 
- 
   // Redirect to the /urls page
   res.redirect("/urls");
 });
@@ -302,13 +279,12 @@ app.post("/register", (req, res) => {
 
   // error message when user registers with an existing account
   const existingUser = getUserByEmail(email, users);
-  if (existingUser) {    
+  if (existingUser) {
     return res.status(400).send('Email already in use');
   }
 
   // Correct usage of setting the session variable
   req.session.user_id = userID;
-
   userObj.id = userID;
   userObj.email = email;
 
@@ -321,14 +297,13 @@ app.post("/register", (req, res) => {
 });
 
 // Root endpoint
-
 app.get("/", (req, res) => {
   console.log("Current session user ID:", req.session.user_id);
-    if (req.session.user_id) {
-        res.redirect("/urls");
-    } else {
-        res.redirect("/login");
-    }
+  if (req.session.user_id) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
 });
 // GET /urls.json endpoint
 app.get("/urls.json", (req, res) => {
