@@ -37,17 +37,26 @@ app.set("view engine", "ejs");
 
 //app.use(cookieParser());
 app.use(cookieSession({
-  name: 'tinyapp',
-  keys: ['secret']
+  name: 'session',
+  keys: ['secret', 'key2']
 }));
 
 // Handles POST request. Middleware, parses incoming requests with URL-encoded payloads
 app.use(express.urlencoded({ extended: true }));
 
+// Browser Caching: Set HTTP headers to prevent caching of potentially sensitive data
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 // Middleware to check if user is logged in and redirect from /register
 const redirectToUrlsIfLoggedIn = (req, res, next) => {
   const path = req.path;
   if (req.session.user_id && path !== "/login" && path !== "/register") {
+ 
+   
+   
     return res.redirect("/urls");
   }
   next();
@@ -65,9 +74,10 @@ const redirectToLoginIfNotLoggedIn = (req, res, next) => {
 // Middleware to check if user is logged in
 const requireLogin = (req, res, next) => {
   if (!req.session.user_id) {
-    return res.redirect("/login");
+    return res.status(401).send('<html><body><p>You must be logged in to view this page.</p></body></html>');
+  } else {
+    next();
   }
-  next();
 };
 
 // User database
@@ -95,6 +105,16 @@ const users = {
     password: bcrypt.hashSync("dishwasher-funk", 10), // need to hashSync to work for testing
   },
 };
+
+// Adjust the root route to correctly handle redirection
+app.get("/", redirectToLoginIfNotLoggedIn, (req, res) => {
+  // Since redirectToUrlsIfLoggedIn redirects logged-in users to '/urls',
+  // we only handle the case for logged-out users here.
+  if (!req.session.user_id) {
+    res.redirect("/urls");
+  }
+
+});
 
 // 1. If someone is logged in and visits /register or /login pages, they will be redirected to /urls:
 // GET /register endpoint
@@ -125,13 +145,14 @@ app.get("/urls", (req, res) => {
   // Checks if for registered user can view URLS
   if (!req.session.user_id) {
     return res.status(401).send('Cannot view "My URLs", you are not logged in');
+  
   }
 
   const templateVars = {
     urls: urlsForUser(req.session.user_id),
     userInfo: users[req.session.user_id], // displays the username
   };
-
+  
   res.render("urls_index", templateVars);
 });
 
@@ -159,6 +180,8 @@ app.get("/u/:id", (req, res) => {
     return res.status(404).send('Shortened URL does not exist');
   }
 
+  console.log("Logged User ID:", req.session.user_id);
+  console.log("Requested URL's User ID:", urlEntry.userID);
   res.redirect(urlEntry.longURL);  // Redirect to the longURL property of the urlEntry object
 });
 
@@ -167,15 +190,22 @@ app.get("/u/:id", (req, res) => {
 // GET /urls/:id endpoint
 // Ensure the GET /urls/:id page returns a relevant error message to the user if they are not logged in:
 app.get("/urls/:id", requireLogin, (req, res) => {
-  const specificURL = urlsForUser(req.session.user_id);
+  const shortId = req.params.id;
+  const urlEntry = urlDatabase[shortId];
 
-  if (!specificURL[req.params.id]) {
-    return res.status(401).send("Cannot access these URLs!");
+  // Check if the URL exists in the database
+  if (!urlEntry) {
+    return res.status(404).send('<html><body><p>This shortened URL does not exist.</p></body></html>');
+  }
+
+  // Check if the logged-in user owns the URL
+  if (urlEntry.userID !== req.session.user_id) {
+    return res.status(403).send('<html><body><p>You do not have permission to access this URL.</p></body></html>');
   }
 
   const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id].longURL,
+    id: shortId,
+    longURL: urlEntry.longURL,
     userInfo: users[req.session.user_id],
   };
   res.render("urls_show", templateVars);
@@ -192,6 +222,8 @@ app.post("/urls/:id", requireLogin, (req, res) => {
   }
 
   urlDatabase[shortId] = { longURL: longURL, userID: req.session.user_id };
+ 
+  console.log("Session User ID:", req.session.user_id); // Check session ID at critical points
   res.redirect("/urls/");
 });
 
@@ -209,7 +241,11 @@ app.post("/urls/:id/delete", requireLogin, (req, res) => {
 
 // POST /logout endpoint
 app.post("/logout", (req, res) => {
+  req.session.user_id = null;
   req.session = null; // clears the submitted user cookie
+ 
+  
+  //console.log("Session User ID:", req.session.user_id); // Check session ID at critical points
   res.redirect("/login");
 });
 
