@@ -220,6 +220,32 @@ app.post("/urls/:id", requireLogin, (req, res) => {
   res.redirect("/urls/");
 });
 
+
+// Ensure the GET /urls/:id/delete page returns a relevant error message to the user 
+app.get("/urls/:id/delete", requireLogin, (req, res) => {
+  const shortId = req.params.id;
+  const urlEntry = urlDatabase[shortId];
+
+  // Check if the URL exists in the database
+  if (!urlEntry) {
+    return res.status(404).send('<html><body><p>This shortened URL does not exist.</p></body></html>');
+  }
+
+  // Check if the logged-in user owns the URL
+  if (urlEntry.userID !== req.session.user_id) {
+    return res.status(403).send('<html><body><p>You do not have permission to delete this URL.</p></body></html>');
+  }
+  delete urlDatabase[shortId]; // Allows the owner user to delete by injecting. Comment out to disable. 
+ 
+  const templateVars = {
+    id: shortId,
+    longURL: urlEntry.longURL,
+    userInfo: users[req.session.user_id],
+  };
+
+  res.redirect("/urls/");
+});
+
 // POST /urls/:id/delete endpoint
 app.post("/urls/:id/delete", requireLogin, (req, res) => {
   const shortId = req.params.id;
