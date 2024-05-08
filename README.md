@@ -29,23 +29,23 @@ My URLs page -> urls_index.ejs -> /urls
 
 Registered accounts for testing purposes:
 
-    id: userRandomID,
-    email: user@example.com,
+    id: userRandomID
+    email: user@example.com
     password: purple-monkey-dinosaur
 
-    id: user2RandomID,
-    email: user2@example.com,
+    id: user2RandomID
+    email: user2@example.com
     password: dishwasher-funk
 
 Registered Short URLS for testing purposes:
 
     Short URL: b6UTxQ
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
+    longURL: https://www.tsn.ca
+    userID: aJ48lW
 
     Short URL: i3BoGr
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
+    longURL: https://www.google.ca
+    userID: aJ48lW
 
 
 ## Notes
