@@ -45,10 +45,10 @@ app.use(cookieSession({
 app.use(express.urlencoded({ extended: true }));
 
 // Browser Caching: Set HTTP headers to prevent caching of potentially sensitive data
-app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store');
-  next();
-});
+// app.use((req, res, next) => {
+//   res.set('Cache-Control', 'no-store');
+//   next();
+// });
 
 // Middleware to check if user is logged in and redirect from /register
 const redirectToUrlsIfLoggedIn = (req, res, next) => {
@@ -106,15 +106,14 @@ const users = {
   },
 };
 
-// Adjust the root route to correctly handle redirection
-app.get("/", redirectToLoginIfNotLoggedIn, (req, res) => {
-  // Since redirectToUrlsIfLoggedIn redirects logged-in users to '/urls',
-  // we only handle the case for logged-out users here.
-  if (!req.session.user_id) {
-    res.redirect("/urls");
-  }
 
-});
+
+
+
+
+
+
+
 
 // 1. If someone is logged in and visits /register or /login pages, they will be redirected to /urls:
 // GET /register endpoint
@@ -139,6 +138,9 @@ app.get("/urls/new", redirectToLoginIfNotLoggedIn, (req, res) => {
   res.render("urls_new", templateVars);
 });
 // end of 2
+
+
+
 
 // GET /urls endpoint
 app.get("/urls", (req, res) => {
@@ -165,8 +167,17 @@ app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
   const templateVars = { userInfo: users[req.session.user_id] };
+ 
+  if (!req.body.longURL) {
+    return res.status(400).send("Link cannot be empty");
+  }
+ 
   console.log("URL Database on creation:", urlDatabase);
   res.redirect(`/urls/${shortURL}`);
+
+
+
+
 });
 // end of 3
 
@@ -268,6 +279,11 @@ const user = users[userId];
   // Set the user_id session variable to the user's ID
   req.session.user_id = user.id;
 
+ 
+ 
+ 
+ 
+ 
   // Redirect to the /urls page
   res.redirect("/urls");
 });
@@ -305,10 +321,15 @@ app.post("/register", (req, res) => {
 });
 
 // Root endpoint
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
 
+app.get("/", (req, res) => {
+  console.log("Current session user ID:", req.session.user_id);
+    if (req.session.user_id) {
+        res.redirect("/urls");
+    } else {
+        res.redirect("/login");
+    }
+});
 // GET /urls.json endpoint
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
