@@ -23,7 +23,7 @@ My URLs page -> urls_index.ejs -> /urls
 
 - Install all dependencies (using the `npm install` command).
 - Run the development web server using the `npm start` command.
-- Install `npm install mocha chai@4.3.1 --save-dev` for unit testing, and run `npm test` to confirm your test passes. 
+- Run `npm test` to confirm the unit test passes -> getUserByEmail(). 
 
 ## Cheat Codes for testing purposes
 
